@@ -7,8 +7,8 @@ import java.util.TreeMap;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
-import edu.handong.analysise.utils.NotEnoughArgumentException;
-import edu.handong.analysise.utils.Utils;
+import edu.handong.analysis.utils.NotEnoughArgumentException;
+import edu.handong.analysis.utils.Utils;
 
 public class HGUCoursePatternAnalyzer {
 
@@ -32,6 +32,7 @@ public class HGUCoursePatternAnalyzer {
 		
 		String dataPath = args[0]; // csv file to be analyzed
 		String resultPath = args[1]; // the file path where the results are saved.
+	
 		ArrayList<String> lines = Utils.getLines(dataPath, true);
 		
 		students = loadStudentCourseRecords(lines);
@@ -55,8 +56,12 @@ public class HGUCoursePatternAnalyzer {
 	private HashMap<String,Student> loadStudentCourseRecords(ArrayList<String> lines) {
 		
 		// TODO: Implement this method
-		
-		return null; // do not forget to return a proper variable.
+		HashMap<String,Student> courseRecords = new HashMap<String, Student>(); 
+		for(String aline:lines) {
+			//Student instace를 어떻게 해줘야 하는 지 모르겠다
+			courseRecords.put(aline.split(",")[0], //Student );
+		} 
+		return courseRecords; 
 	}
 
 	/**
