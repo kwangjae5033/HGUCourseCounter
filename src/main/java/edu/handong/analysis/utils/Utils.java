@@ -39,18 +39,18 @@ public class Utils {
 	public static void writeAFile(ArrayList<String> linesToBeSaved, String resultPath) {
 		// TODO Auto-generated method stub
 		try {
-			File file = new File(resultPath);
-			File dir = new File(file.getParentFile().getAbsolutePath());
+			File f = new File(resultPath);
+			File dir = new File(f.getParentFile().getAbsolutePath());
 			dir.mkdirs();
-			FileWriter writer = new FileWriter(file, true);
+			FileWriter wrt = new FileWriter(f, true);
 			
-			writer.write("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester\n");
+			wrt.write("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester\n");
 			
 			for(String line: linesToBeSaved) {
-				writer.write(line + "\n");
-				writer.flush();
+				wrt.write(line + "\n");
+				wrt.flush();
 			}
-			writer.close();
+			wrt.close();
 			
 		} catch (FileNotFoundException e) {
 			
