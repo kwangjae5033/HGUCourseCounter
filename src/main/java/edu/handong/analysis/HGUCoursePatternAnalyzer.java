@@ -1,6 +1,7 @@
 package edu.handong.analysis;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,15 +22,19 @@ import edu.handong.analysis.utils.Utils;
 public class HGUCoursePatternAnalyzer {
 
 	private HashMap<String,Student> students;
-	String path;
-	boolean verbose;
-    boolean help;
-	boolean fullpath;
+	public String input;
+	public String output; 
+	public String coursecode; 
+	public String startyear;
+	public String endyear;
+	public String analysis; 
+	boolean help;
 	
 	/**
 	 * This method runs our analysis logic to save the number courses taken by each student per semester in a result file.
 	 * Run method must not be changed!!
 	 * @param args
+	 * @throws IOException 
 	 */
 	public void run(String[] args) {
 		
@@ -40,54 +45,64 @@ public class HGUCoursePatternAnalyzer {
 	            printHelp(options);
 	            return;
 	         }
-	         // path is required (necessary) data so no need to have a branch.
-	         System.out.println("You provided \"" + path + "\" as the value of the option p");
 	         
-	         // TODO show the number of files in the path
-	        
-	         File file = new File(path);
-	         System.out.println(file.listFiles().length);     
+	         String dataPath = input; 
+	         String resultPath = output; 
 	         
-	         if(verbose) {
-	            // TODO list all files in the path
-	            File folder = new File(path);
-	            listFilesForFolder(folder);
-	            System.out.println("Your program is terminated. (This message is shown because you turned on -v option!");
+	         if (Integer.parseInt(analysis) == 1) {
+	        	 //"a -1"
+	        	 ArrayList<String> lines = Utils.getLines(dataPath, true);				 
+	        	 
+	        	 students = loadStudentCourseRecords(lines);
 
-	         }
-
-	         if(fullpath) {
-	            File file2 = new File(path);
-	            System.out.println("Fullpath: " + file2.getAbsolutePath());
-	         }
+	        	 // To sort HashMap entries by key values so that we can save the results by student ids in ascending order.
+	     		 Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
+	     		
+	     		 // Generate result lines to be saved.
+	     		 ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
+	     		
+	     		 // Write a file (named like the value of resultPath) with linesTobeSaved.
+	     		 Utils.writeAFile(linesToBeSaved, resultPath);
 	         
-	      }
-	    // HW5 skeleton from here 
-		try {
-			// when there are not enough arguments from CLI, it throws the NotEnoughArgmentException which must be defined by you.
-			if(args.length<2)
-				throw new NotEnoughArgumentException();
-		} catch (NotEnoughArgumentException e) {
-			System.out.println(e.getMessage());
-			System.exit(0);
-		}
-		
-		String dataPath = args[0]; // csv file to be analyzed
-		String resultPath = args[1]; // the file path where the results are saved.
+	         }else {
+	        	 //"-a 2"
+	        	 if(coursecode.isEmpty()) { 
+	        		 System.out.println("You have to type option -c with -a 2"); 
+	        	 	 System.exit(0);
+	        	 }
+	        	 
+	        	 ArrayList<String> lines = Utils.getLines(dataPath, true);
+	        	 
+	             HashMap<String,ArrayList<Course>> students = new HashMap<String,ArrayList<Course>>(); 
+	        	 
+	             for(String aline : lines) {
+	        		
+	        		 if(aline.contains(coursecode)) {
+	 
+	        			 
+						 Course newCourse = new Course(aline);
+	        			 if(students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()))==null) {
+	        				 ArrayList<Course> studentInSameYearNSemester = new ArrayList<Course>(); 
+	        				 studentInSameYearNSemester.add(newCourse); 
+	        				 students.put(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()),studentInSameYearNSemester);
+	        			 }
+	        			 else {
+	        				 students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken())).add(newCourse); 
+	        			 }
+	        			
+	        		 }//stored students that took the course at same year and same semester
+	        		 
+	        	 }//end of for-each loop 
+	        	 
+	             //year range filter//
+	        	 
+	         }//end of else 
+	         
+	         ////.....
+	         
+	    }//end of if(parseOptions...
 	
-		ArrayList<String> lines = Utils.getLines(dataPath, true);
-		
-		students = loadStudentCourseRecords(lines);
-
-		// To sort HashMap entries by key values so that we can save the results by student ids in ascending order.
-		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
-		
-		// Generate result lines to be saved.
-		ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
-		
-		// Write a file (named like the value of resultPath) with linesTobeSaved.
-		Utils.writeAFile(linesToBeSaved, resultPath);
-	}
+	}//end of run function 
 	
 
 	/**
@@ -149,16 +164,20 @@ public class HGUCoursePatternAnalyzer {
 	
 	 
 	private boolean parseOptions(Options options, String[] args) {
+		
 		CommandLineParser parser = new DefaultParser();
 		
 		try {
 			
 			CommandLine cmd = parser.parse(options, args);
-
-	        path = cmd.getOptionValue("p");
-	        verbose = cmd.hasOption("v");
+		
+		    input = cmd.getOptionValue("i");
+	        output = cmd.getOptionValue("o");
+	        coursecode = cmd.getOptionValue("c");
+	        startyear = cmd.getOptionValue("s");
+	        endyear = cmd.getOptionValue("e");
+	        analysis = cmd.getOptionValue("a");
 	        help = cmd.hasOption("h");
-	        fullpath = cmd.hasOption("f");
 
 	      } catch (Exception e) {
 	        printHelp(options);
@@ -176,32 +195,47 @@ public class HGUCoursePatternAnalyzer {
 		Options options = new Options();
 		
 		// add options by using OptionBuilder
-	    options.addOption(Option.builder("p").longOpt("path")
-	           .desc("Set a path of a directory or a file to display")
+	    options.addOption(Option.builder("i").longOpt("input")
+	           .desc("Set an input file path")
 	           .hasArg()
 	           .argName("Path name to display")
 	           .required()
 	           .build());
 	    
-	    // add options by using OptionBuilder
-	    options.addOption(Option.builder("v").longOpt("verbose")
-	           .desc("Display detailed messages!")
-	           //.hasArg()     // this option is intended not to have an option value but just an option
-	           .argName("verbose option")
-	           //.required() // this is an optional option. So disabled required().
-	           .build());
-	      
-	    // add options by using OptionBuilder
-	    options.addOption(Option.builder("h").longOpt("help")
-	           .desc("Help")
-               .build());
-	      
-	    // add options by using OptionBuilder
-	    options.addOption(Option.builder("f").longOpt("fullpath")
-	           .desc("Set a fullpath of a directory or a file to display")
+	    options.addOption(Option.builder("o").longOpt("output")
+		           .desc("Set an output file path")
+		           .hasArg()
+		           .argName("Path name to display")
+		           .required()
+		           .build());
+		    
+	    //two separate options? Or in one?
+	    options.addOption(Option.builder("a").longOpt("analysis")
+	           .desc("")
+	           .hasArg()     // this option is intended not to have an option value but just an option
+	           .argName("")
+	           .required()   
 	           .build());
 
-	      return options;
+	    options.addOption(Option.builder("c").longOpt("coursecode")
+	           .desc("Course code for '-a 2' option")
+               .hasArg()
+               .argName("") 
+	    	   .build());
+	      
+	    options.addOption(Option.builder("s").longOpt("startyear")
+	           .desc("Set the start year for analysis")
+	           .hasArg()
+	           .argName("")
+	           .build());
+
+	    options.addOption(Option.builder("e").longOpt("endyear")
+	           .desc("Set the end year for analysis")
+	           .hasArg()
+	           .argName("")
+	           .build());
+
+	    return options;
 	
 	}//end createOptions function
 	
@@ -209,8 +243,8 @@ public class HGUCoursePatternAnalyzer {
 	private void printHelp(Options options) {
 		// automatically generate the help statement
 	    HelpFormatter formatter = new HelpFormatter();
-	    String header = "CLI test program";
-	    String footer ="\nPlease report issues at https://github.com/lifove/CLIExample/issues";
+	    String header = "HGU Course Analyzer";
+	    String footer ="";
 	    formatter.printHelp("CLIExample", header, options, footer, true);
 	
 	}
