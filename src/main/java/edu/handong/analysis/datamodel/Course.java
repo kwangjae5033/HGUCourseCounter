@@ -40,5 +40,8 @@ public class Course {
 		return semesterCourseTaken;
 	}
 	
+	public String getCourseCode() {
+		return courseCode;
+	}
 	
 }//end of class 

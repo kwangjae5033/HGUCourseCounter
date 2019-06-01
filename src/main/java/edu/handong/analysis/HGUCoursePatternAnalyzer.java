@@ -2,6 +2,7 @@ package edu.handong.analysis;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,12 +23,12 @@ import edu.handong.analysis.utils.Utils;
 public class HGUCoursePatternAnalyzer {
 
 	private HashMap<String,Student> students;
-	public String input;
-	public String output; 
-	public String coursecode; 
-	public String startyear;
-	public String endyear;
-	public String analysis; 
+	String input;
+	String output; 
+	String coursecode; 
+	String startyear;
+	String endyear;
+	String analysis; 
 	boolean help;
 	
 	/**
@@ -66,6 +67,7 @@ public class HGUCoursePatternAnalyzer {
 	         
 	         }else {
 	        	 //"-a 2"
+	        	 String courseName = ""; 
 	        	 if(coursecode.isEmpty()) { 
 	        		 System.out.println("You have to type option -c with -a 2"); 
 	        	 	 System.exit(0);
@@ -76,29 +78,87 @@ public class HGUCoursePatternAnalyzer {
 	             HashMap<String,ArrayList<Course>> students = new HashMap<String,ArrayList<Course>>(); 
 	        	 
 	             for(String aline : lines) {
-	        		
-	        		 if(aline.contains(coursecode)) {
-	 
-	        			 
-						 Course newCourse = new Course(aline);
-	        			 if(students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()))==null) {
-	        				 ArrayList<Course> studentInSameYearNSemester = new ArrayList<Course>(); 
-	        				 studentInSameYearNSemester.add(newCourse); 
-	        				 students.put(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()),studentInSameYearNSemester);
-	        			 }
-	        			 else {
-	        				 students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken())).add(newCourse); 
-	        			 }
-	        			
-	        		 }//stored students that took the course at same year and same semester
 	        		 
+	        		 if(aline.contains(coursecode)) {
+	        			 String year = aline.split(",")[7].trim();
+	        			 courseName = aline.split(",")[5].trim(); 
+	        			 if(!startyear.equals("")&&!endyear.equals("")) {
+	        			 	
+	        				 if((Integer.parseInt(year)>=Integer.parseInt(startyear))&&(Integer.parseInt(year)<=Integer.parseInt(endyear))) {		 
+	        			 		Course newCourse = new Course(aline);
+	        			 		
+	        			 		if(students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()))==null) {
+	        			 			ArrayList<Course> studentInSameYearNSemester = new ArrayList<Course>(); 
+	        			 			studentInSameYearNSemester.add(newCourse); 
+	        			 			students.put(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()),studentInSameYearNSemester);
+	        			 		}
+	        			 		else {
+	        			 				students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken())).add(newCourse); 
+	        			 		}
+	        			 	} 
+	        			 } else { 
+	        			 	Course newCourse = new Course(aline);
+        			 		if(students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()))==null) {
+        			 			ArrayList<Course> studentInSameYearNSemester = new ArrayList<Course>(); 
+        			 			studentInSameYearNSemester.add(newCourse); 
+        			 			students.put(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken()),studentInSameYearNSemester);
+        			 		}
+        			 		else {
+        			 			students.get(Integer.toString(newCourse.getYearTaken())+Integer.toString(newCourse.getSemesterCourseTaken())).add(newCourse); 
+        			 		}
+	        			 		
+	        			 } 
+	        		 }//stored students that took the course at same year and same semester
 	        	 }//end of for-each loop 
-	        	 
-	             //year range filter//
-	        	 
+	             
+	             Map<String,ArrayList<Course>> sortedStudents = new TreeMap<String,ArrayList<Course>>(students);
+	             
+	             ArrayList<String> linesToBeSaved = new ArrayList<String>();
+	             
+	             HashMap<String,Student> totalStudentN = loadStudentCourseRecords(lines);
+	     
+	             for(int j=1; j<=totalStudentN.size(); j++) {
+	            	 int numberCoursesTaking = totalStudentN.get(String.format("%04d", j)).getCourseTaken().size();
+	            	 for(int k=0; k<numberCoursesTaking; k++) {
+	            		 int yearTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getYearTaken();
+	            		 int semesterTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getSemesterCourseTaken();
+	            	 }
+	             }
+	             
+	             int fourSemesters = 4;
+	             int year = Integer.parseInt(startyear); 
+	             int numberOfStudentsInThatYearNSemester = 0;
+	             while(year<=Integer.parseInt(endyear)){
+	            	 for(int i=1; i <= fourSemesters; i++) {
+	            		if(sortedStudents.containsKey(Integer.toString(year)+Integer.toString(i))) {
+	            			numberOfStudentsInThatYearNSemester = sortedStudents.get(Integer.toString(year)+Integer.toString(i)).size();
+	            			int totalStudents = 0;
+	            			for(int j=1; j<=totalStudentN.size(); j++) {
+	            				int numberCoursesTaking = totalStudentN.get(String.format("%04d", j)).getCourseTaken().size();
+	        	            	for(int k=0; k<numberCoursesTaking; k++) {
+	        	            		int yearTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getYearTaken();
+	        	            		int semesterTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getSemesterCourseTaken();
+	        	            		if((year == yearTaken) && (i==semesterTaken)) {
+	        	            			totalStudents++; 
+	        	            			break;
+	        	            		}
+	        	            	}
+	        	            }
+	            			
+	            			double rate = Double.valueOf(numberOfStudentsInThatYearNSemester)/Double.valueOf(totalStudents);
+	            			rate = Double.parseDouble(new DecimalFormat("##.#").format(rate)); 
+	            			rate *= Double.valueOf(100); 
+	            			String line = Integer.toString(year) +", "+ Integer.toString(i) +", "+ coursecode +", "+ courseName +", "+ Integer.toString(totalStudents) +", "+ Integer.toString(numberOfStudentsInThatYearNSemester) +", "+ Double.toString(rate); 
+	        	            linesToBeSaved.add(line); 
+	        	            		     
+	            		}//end of if 
+	            		
+	            	 }//end of for loop for four semesters
+	            	 year++;
+	             }//end of while loop
+	             
+	             Utils.writeAFileB(linesToBeSaved, resultPath);
 	         }//end of else 
-	         
-	         ////.....
 	         
 	    }//end of if(parseOptions...
 	
