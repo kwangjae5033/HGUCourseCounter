@@ -23,6 +23,8 @@ import edu.handong.analysis.utils.Utils;
 public class HGUCoursePatternAnalyzer {
 
 	private HashMap<String,Student> students;
+	//did not follow the naming convention to indicate that
+	//these variables are coming from command line
 	String input;
 	String output; 
 	String coursecode; 
@@ -51,20 +53,38 @@ public class HGUCoursePatternAnalyzer {
 	         String resultPath = output; 
 	         
 	         if (Integer.parseInt(analysis) == 1) {
-	        	 //"a -1"
-	        	 ArrayList<String> lines = Utils.getLines(dataPath, true);				 
-	        	 
+	        	 //"-a 1" 
+	        	 ArrayList<String> lines = Utils.getLines(dataPath, true);	
 	        	 students = loadStudentCourseRecords(lines);
-
+        	 	 
 	        	 // To sort HashMap entries by key values so that we can save the results by student ids in ascending order.
-	     		 Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
-	     		
-	     		 // Generate result lines to be saved.
-	     		 ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
-	     		
-	     		 // Write a file (named like the value of resultPath) with linesTobeSaved.
-	     		 Utils.writeAFile(linesToBeSaved, resultPath);
-	         
+     		 	 Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
+     		     
+	        	 if (startyear.isBlank() || endyear.isBlank()) {
+		        	 // Generate result lines to be saved.
+	     		 	 ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
+	     		     
+	     		 	 // Write a file (named like the value of resultPath) with linesTobeSaved.
+	     		 	 Utils.writeAFile(linesToBeSaved, resultPath);
+	        	 }
+	        	 else {//if there are specified startyear and endyear 
+	        		 // Generate result lines to be saved.
+	        		 ArrayList<String> linesToBeSaved = new ArrayList<String>();
+	        		 int numOfStudents = sortedStudents.size();
+	        			
+	        		 for(int i=1; i <= numOfStudents; i++) {
+	        			if(sortedStudents.get(String.format("%04d", i)).getCourseTaken().get(0).getYearTaken() < Integer.parseInt(startyear) || sortedStudents.get(String.format("%04d", i)).getCourseTaken().get(0).getYearTaken() > Integer.parseInt(endyear)) 
+	        				continue; 
+	        			int numOfSemesters = sortedStudents.get(String.format("%04d", i)).getSemestersByYearAndSemester().get(Integer.toString(sortedStudents.get(String.format("%04d", i)).getCourseTaken().get(sortedStudents.get(String.format("%04d", i)).getCourseTaken().size()-1).getYearTaken())+"-"+Integer.toString(sortedStudents.get(String.format("%04d", i)).getCourseTaken().get(sortedStudents.get(String.format("%04d", i)).getCourseTaken().size()-1).getSemesterCourseTaken()));
+	        				//print and check if the result gives correct semester 		
+	        				for(int j=1; j <= numOfSemesters; j++) { 
+	        					linesToBeSaved.add(String.format("%04d", i) + "," + Integer.toString(numOfSemesters) + "," + Integer.toString(j) + "," + Integer.toString(sortedStudents.get(String.format("%04d", i)).getNumCourseInNthSemestersByYearAndSemesters(j)));
+	        				}	
+	        		 }
+	        		 // Write a file (named like the value of resultPath) with linesTobeSaved.
+		        	 Utils.writeAFile(linesToBeSaved, resultPath);	 
+	        	 }
+	        	
 	         }else {
 	        	 //"-a 2"
 	        	 String courseName = ""; 
@@ -138,7 +158,7 @@ public class HGUCoursePatternAnalyzer {
 	        	            	for(int k=0; k<numberCoursesTaking; k++) {
 	        	            		int yearTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getYearTaken();
 	        	            		int semesterTaken = totalStudentN.get(String.format("%04d", j)).getCourseTaken().get(k).getSemesterCourseTaken();
-	        	            		if((year == yearTaken) && (i==semesterTaken)) {
+	        	            		if((year == yearTaken) && (i == semesterTaken)) {
 	        	            			totalStudents++; 
 	        	            			break;
 	        	            		}
@@ -152,7 +172,6 @@ public class HGUCoursePatternAnalyzer {
 	        	            linesToBeSaved.add(line); 
 	        	            		     
 	            		}//end of if 
-	            		
 	            	 }//end of for loop for four semesters
 	            	 year++;
 	             }//end of while loop
